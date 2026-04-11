@@ -58,20 +58,20 @@ const toggleReminder = async (event: MouseEvent) => {
 
 <template>
   <article
-    class="group relative grid cursor-pointer overflow-hidden rounded-[30px] border-2 bg-[#f6ecd7] text-slate-900 shadow-ticket transition duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_30px_80px_rgba(8,17,31,0.35)] lg:grid-cols-[1.45fr_0.85fr]"
+    class="group relative grid min-h-[16rem] grid-cols-[minmax(0,1.45fr)_minmax(11.5rem,0.85fr)] cursor-pointer overflow-hidden rounded-[30px] border-2 bg-[#f6ecd7] text-slate-900 shadow-ticket transition duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_30px_80px_rgba(8,17,31,0.35)]"
     :class="ticketTone.border"
     @click="openDetail"
   >
-    <div class="pointer-events-none absolute inset-y-0 left-[68%] hidden border-l-2 border-dashed lg:block" :class="ticketTone.line" />
+    <div class="pointer-events-none absolute inset-y-0 left-[68%] border-l-2 border-dashed" :class="ticketTone.line" />
 
-    <div class="relative p-6 sm:p-7">
+    <div class="relative p-[clamp(1rem,2vw,1.75rem)]">
       <div class="absolute left-0 top-10 h-8 w-4 -translate-x-1/2 rounded-r-full bg-slate-950/90" />
       <div class="absolute bottom-10 left-0 h-8 w-4 -translate-x-1/2 rounded-r-full bg-slate-950/90" />
 
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-[11px] uppercase tracking-[0.38em] text-slate-500">特价登机联</p>
-          <h3 class="mt-3 text-xl font-semibold tracking-[0.08em] text-slate-900">
+          <h3 class="mt-3 text-[clamp(1rem,1.6vw,1.25rem)] font-semibold tracking-[0.08em] text-slate-900">
             {{ flight.airline }}
           </h3>
         </div>
@@ -95,16 +95,16 @@ const toggleReminder = async (event: MouseEvent) => {
         </div>
       </div>
 
-      <div class="mt-6 grid items-end gap-4 sm:grid-cols-[1fr_auto_1fr]">
+      <div class="mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-[clamp(0.5rem,1.5vw,1rem)]">
         <div>
-          <p class="font-serif text-3xl font-bold leading-none text-slate-900 sm:text-4xl">
+          <p class="font-serif text-[clamp(1.4rem,3vw,2.25rem)] font-bold leading-none text-slate-900">
             {{ flight.departure.city }}
           </p>
           <p class="mt-2 text-sm uppercase tracking-[0.32em]" :class="ticketTone.accent">
             {{ flight.departure.code }}
           </p>
           <p class="mt-4 text-sm text-slate-600">起飞时间</p>
-          <p class="text-lg font-semibold text-slate-800">{{ flight.departure.time }}</p>
+          <p class="text-[clamp(0.9rem,1.6vw,1.125rem)] font-semibold text-slate-800">{{ flight.departure.time }}</p>
         </div>
 
         <div class="flex flex-col items-center justify-center text-center">
@@ -115,15 +115,15 @@ const toggleReminder = async (event: MouseEvent) => {
           </p>
         </div>
 
-        <div class="sm:text-right">
-          <p class="font-serif text-3xl font-bold leading-none text-slate-900 sm:text-4xl">
+        <div class="text-right">
+          <p class="font-serif text-[clamp(1.4rem,3vw,2.25rem)] font-bold leading-none text-slate-900">
             {{ flight.destination.city }}
           </p>
           <p class="mt-2 text-sm uppercase tracking-[0.32em]" :class="ticketTone.accent">
             {{ flight.destination.code }}
           </p>
           <p class="mt-4 text-sm text-slate-600">到达时间</p>
-          <p class="text-lg font-semibold text-slate-800">{{ flight.destination.time }}</p>
+          <p class="text-[clamp(0.9rem,1.6vw,1.125rem)] font-semibold text-slate-800">{{ flight.destination.time }}</p>
         </div>
       </div>
 
@@ -141,14 +141,14 @@ const toggleReminder = async (event: MouseEvent) => {
       </div>
     </div>
 
-    <div class="relative flex flex-col justify-between border-t-2 p-6 lg:border-l-0 lg:border-t-0 lg:p-7" :class="ticketTone.line">
+    <div class="relative flex flex-col justify-between border-l-2 p-[clamp(1rem,2vw,1.75rem)]" :class="ticketTone.line">
       <div class="absolute right-0 top-10 h-8 w-4 translate-x-1/2 rounded-l-full bg-slate-950/90" />
       <div class="absolute bottom-10 right-0 h-8 w-4 translate-x-1/2 rounded-l-full bg-slate-950/90" />
 
       <div>
         <p class="text-[11px] uppercase tracking-[0.38em] text-slate-500">票价</p>
         <div class="mt-4 flex items-end gap-3">
-          <span class="text-4xl font-bold leading-none text-slate-900">¥{{ flight.price }}</span>
+          <span class="text-[clamp(1.7rem,3.2vw,2.25rem)] font-bold leading-none text-slate-900">¥{{ flight.price }}</span>
           <span class="pb-1 text-sm text-slate-500 line-through">¥{{ flight.originalPrice }}</span>
         </div>
         <p class="mt-3 text-sm text-slate-600">立省 ¥{{ savings }}</p>

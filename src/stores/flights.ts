@@ -1,7 +1,28 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { mockFlights } from '@/data/mockFlights';
+import {
+  fetchRealFlights,
+  type FetchRealFlightsParams,
+  type FlightApiProvider,
+} from '@/services/apiService';
 import type { FlightTicket, SubscriptionNotice } from '@/types/flight';
+
+interface AirportSelection {
+  id: string;
+  label: string;
+}
+
+interface SearchDraft {
+  origins: AirportSelection[];
+  destinations: AirportSelection[];
+  departDate: string;
+  returnDate: string;
+  cabinClass: string;
+  adults: number;
+  children: number;
+  currency_code: string;
+}
 
 export const useFlightsStore = defineStore('flights', () => {
   const flights = ref<FlightTicket[]>(mockFlights);
@@ -12,6 +33,24 @@ export const useFlightsStore = defineStore('flights', () => {
   const maxPrice = ref(2500);
   const directOnly = ref(false);
   const selectedAirline = ref('全部航司');
+  const selectedApiProvider = ref<FlightApiProvider>('learning');
+  const isLoading = ref(false);
+  const dataSourceLabel = ref('示例数据');
+  const lastError = ref('');
+  const hasSearchedRealFlights = ref(false);
+  const searchDraft = ref<SearchDraft>({
+    origins: [
+      { id: 'SHA.AIRPORT', label: '上海 · 虹桥国际机场 (SHA)' },
+      { id: 'PVG.AIRPORT', label: '上海 · 浦东国际机场 (PVG)' },
+    ],
+    destinations: [{ id: 'PEK.AIRPORT', label: '北京 · 首都国际机场 (PEK)' }],
+    departDate: '2026-05-20',
+    returnDate: '',
+    cabinClass: 'ECONOMY',
+    adults: 1,
+    children: 0,
+    currency_code: 'CNY',
+  });
   const simulationStarted = ref(false);
   let simulationTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -55,8 +94,7 @@ export const useFlightsStore = defineStore('flights', () => {
         .join(' ')
         .toLowerCase();
 
-      const matchesKeyword =
-        !keyword || searchableText.includes(keyword);
+      const matchesKeyword = !keyword || searchableText.includes(keyword);
       const matchesPrice = flight.price <= maxPrice.value;
       const matchesDirect = !directOnly.value || flight.isDirect;
       const matchesAirline =
@@ -91,6 +129,14 @@ export const useFlightsStore = defineStore('flights', () => {
 
   const setSelectedAirline = (value: string) => {
     selectedAirline.value = value;
+  };
+
+  const setSelectedApiProvider = (value: FlightApiProvider) => {
+    selectedApiProvider.value = value;
+  };
+
+  const updateSearchDraft = (nextDraft: SearchDraft) => {
+    searchDraft.value = nextDraft;
   };
 
   const pushNotice = (flightId: string, message: string) => {
@@ -150,6 +196,33 @@ export const useFlightsStore = defineStore('flights', () => {
     subscriptions.value = [...subscriptions.value, flightId];
     await requestBrowserNotification();
     pushNotice(flightId, `${flight.departure.city} → ${flight.destination.city} 已加入降价提醒`);
+  };
+
+  const searchRealFlights = async (params: FetchRealFlightsParams) => {
+    isLoading.value = true;
+    lastError.value = '';
+
+    try {
+      const result = await fetchRealFlights(params);
+
+      flights.value = result.flights;
+      hasSearchedRealFlights.value = true;
+      dataSourceLabel.value = result.sourceLabel;
+
+      if (result.message) {
+        lastError.value = result.message;
+        pushNotice('system', result.message);
+      }
+    } catch (error) {
+      flights.value = mockFlights;
+      hasSearchedRealFlights.value = true;
+      dataSourceLabel.value = '示例数据';
+      lastError.value =
+        error instanceof Error ? error.message : '搜索失败，当前展示的是示例数据';
+      pushNotice('system', '当前展示的是示例数据');
+    } finally {
+      isLoading.value = false;
+    }
   };
 
   const startSimulation = () => {
@@ -215,6 +288,12 @@ export const useFlightsStore = defineStore('flights', () => {
     maxPrice,
     directOnly,
     selectedAirline,
+    selectedApiProvider,
+    isLoading,
+    dataSourceLabel,
+    lastError,
+    hasSearchedRealFlights,
+    searchDraft,
     superDeals,
     airlineOptions,
     cheapestFlight,
@@ -226,7 +305,10 @@ export const useFlightsStore = defineStore('flights', () => {
     setMaxPrice,
     setDirectOnly,
     setSelectedAirline,
+    setSelectedApiProvider,
+    updateSearchDraft,
     toggleSubscription,
+    searchRealFlights,
     startSimulation,
     stopSimulation,
   };

@@ -9,7 +9,6 @@ const flightsStore = useFlightsStore();
 const navItems = [
   { label: '看板', to: '/dashboard', name: 'dashboard' },
   { label: '地图', to: '/map', name: 'map' },
-  { label: '盲盒', to: '/blindbox', name: 'blindbox' },
 ];
 
 const activeName = computed(() => route.name?.toString() ?? 'dashboard');
