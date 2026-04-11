@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import {createRouter, createWebHashHistory, createWebHistory} from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
 import MapView from '@/views/MapView.vue';
 import BlindBoxView from '@/views/BlindBoxView.vue';
 import DetailView from '@/views/DetailView.vue';
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: [
     {
       path: '/',

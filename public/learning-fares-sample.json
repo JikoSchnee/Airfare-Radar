@@ -1,0 +1,104 @@
+{
+  "flights": [
+    {
+      "id": "learning-mu5123",
+      "airline": "东方航空",
+      "flightNumber": "MU5123",
+      "isDirect": true,
+      "departure": {
+        "city": "上海",
+        "code": "PVG",
+        "time": "07:20"
+      },
+      "destination": {
+        "city": "成都",
+        "code": "TFU",
+        "time": "10:35"
+      },
+      "price": 380,
+      "originalPrice": 1480,
+      "lastUpdated": "2026-04-11 10:00:00",
+      "tags": ["学习样例", "国内航线", "超值票"]
+    },
+    {
+      "id": "learning-cz3531",
+      "airline": "南方航空",
+      "flightNumber": "CZ3531",
+      "isDirect": true,
+      "departure": {
+        "city": "广州",
+        "code": "CAN",
+        "time": "11:45"
+      },
+      "destination": {
+        "city": "杭州",
+        "code": "HGH",
+        "time": "13:55"
+      },
+      "price": 310,
+      "originalPrice": 1260,
+      "lastUpdated": "2026-04-11 10:00:00",
+      "tags": ["学习样例", "国内航线", "限时特价"]
+    },
+    {
+      "id": "learning-ho1257",
+      "airline": "吉祥航空",
+      "flightNumber": "HO1257",
+      "isDirect": true,
+      "departure": {
+        "city": "上海",
+        "code": "SHA",
+        "time": "19:10"
+      },
+      "destination": {
+        "city": "深圳",
+        "code": "SZX",
+        "time": "21:40"
+      },
+      "price": 420,
+      "originalPrice": 1390,
+      "lastUpdated": "2026-04-11 10:00:00",
+      "tags": ["学习样例", "国内航线", "晚间低价"]
+    },
+    {
+      "id": "learning-mf8387",
+      "airline": "厦门航空",
+      "flightNumber": "MF8387",
+      "isDirect": true,
+      "departure": {
+        "city": "厦门",
+        "code": "XMN",
+        "time": "08:05"
+      },
+      "destination": {
+        "city": "北京",
+        "code": "PEK",
+        "time": "11:00"
+      },
+      "price": 460,
+      "originalPrice": 1650,
+      "lastUpdated": "2026-04-11 10:00:00",
+      "tags": ["学习样例", "国内航线", "早班促销"]
+    },
+    {
+      "id": "learning-3u8745",
+      "airline": "四川航空",
+      "flightNumber": "3U8745",
+      "isDirect": true,
+      "departure": {
+        "city": "成都",
+        "code": "TFU",
+        "time": "14:20"
+      },
+      "destination": {
+        "city": "三亚",
+        "code": "SYX",
+        "time": "16:45"
+      },
+      "price": 520,
+      "originalPrice": 1880,
+      "lastUpdated": "2026-04-11 10:00:00",
+      "tags": ["学习样例", "国内航线", "海岛特价"]
+    }
+  ]
+}

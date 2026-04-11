@@ -1,0 +1,43 @@
+export interface AirportCoordinate {
+  x: number;
+  y: number;
+}
+
+export const airportCoordinates: Record<string, AirportCoordinate> = {
+  SHA: { x: 73, y: 44 },
+  PVG: { x: 74, y: 45 },
+  PEK: { x: 71, y: 26 },
+  PKX: { x: 70, y: 28 },
+  CAN: { x: 65, y: 58 },
+  SZX: { x: 67, y: 59 },
+  WUH: { x: 62, y: 43 },
+  CSX: { x: 60, y: 49 },
+  CGO: { x: 60, y: 36 },
+  TAO: { x: 72, y: 35 },
+  XMN: { x: 70, y: 58 },
+  FOC: { x: 68, y: 57 },
+  TSN: { x: 69, y: 29 },
+  CKG: { x: 49, y: 46 },
+  TFU: { x: 46, y: 44 },
+  CTU: { x: 45, y: 45 },
+  HGH: { x: 72, y: 47 },
+  XIY: { x: 56, y: 35 },
+  NKG: { x: 68, y: 41 },
+  KMG: { x: 44, y: 62 },
+  SYX: { x: 57, y: 83 },
+  HAK: { x: 53, y: 79 },
+  URC: { x: 23, y: 18 },
+  LXA: { x: 33, y: 47 },
+  SIN: { x: 65, y: 94 },
+  BKK: { x: 58, y: 76 },
+  KUL: { x: 63, y: 90 },
+  NRT: { x: 89, y: 36 },
+  HND: { x: 88, y: 39 },
+  ICN: { x: 82, y: 27 },
+  KIX: { x: 86, y: 41 },
+  NGO: { x: 84, y: 39 },
+  FUK: { x: 81, y: 39 },
+  HKT: { x: 54, y: 86 },
+  CNX: { x: 52, y: 72 },
+  DPS: { x: 74, y: 96 },
+};
