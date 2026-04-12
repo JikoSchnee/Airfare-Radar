@@ -5,6 +5,10 @@ import AirportMultiSelect, { type AirportSelection } from '@/components/AirportM
 import BlindBoxPanel from '@/components/BlindBoxPanel.vue';
 import FlightCard from '@/components/FlightCard.vue';
 import ToastNotice from '@/components/ToastNotice.vue';
+import {
+  getBookingUserApiConfig,
+  saveBookingUserApiConfig,
+} from '@/services/apiService';
 import { useFlightsStore } from '@/stores/flights';
 
 const flightsStore = useFlightsStore();
@@ -25,11 +29,13 @@ const {
   isLoading,
   dataSourceLabel,
   lastError,
+  shouldPromptBookingApi,
   hasSearchedRealFlights,
   searchDraft,
 } = storeToRefs(flightsStore);
 
 const isFilterCollapsed = ref(false);
+const bookingUserApiForm = ref(getBookingUserApiConfig());
 
 const addOrigin = (value: AirportSelection) => {
   flightsStore.updateSearchDraft({
@@ -71,24 +77,37 @@ const selectedAirportsSummary = computed(() => ({
 }));
 
 const submitSearch = async () => {
-  const fromId = searchDraft.value.origins[0]?.id;
-  const toId = searchDraft.value.destinations[0]?.id;
+  const origins = searchDraft.value.origins;
+  const destinations = searchDraft.value.destinations;
 
-  if (!fromId || !toId) {
+  if (!origins.length || !destinations.length) {
     return;
   }
 
-  await flightsStore.searchRealFlights({
-    fromId,
-    toId,
-    adults: Number(searchDraft.value.adults),
-    children: Number(searchDraft.value.children),
-    cabinClass: searchDraft.value.cabinClass,
-    departDate: searchDraft.value.departDate,
-    returnDate: searchDraft.value.returnDate,
-    currency_code: searchDraft.value.currency_code,
-    provider: selectedApiProvider.value,
+  const combinations = origins.flatMap((origin) =>
+    destinations.map((destination) => ({
+      fromId: origin.id,
+      toId: destination.id,
+      adults: Number(searchDraft.value.adults),
+      children: Number(searchDraft.value.children),
+      cabinClass: searchDraft.value.cabinClass,
+      departDate: searchDraft.value.departDate,
+      returnDate: searchDraft.value.returnDate,
+      currency_code: searchDraft.value.currency_code,
+      provider: selectedApiProvider.value,
+    })),
+  );
+
+  const dedupedCombinations = combinations.filter((item, index, array) => {
+    const comboKey = `${item.fromId}-${item.toId}-${item.departDate}-${item.returnDate}-${item.provider}`;
+    return array.findIndex((candidate) => {
+      const candidateKey =
+        `${candidate.fromId}-${candidate.toId}-${candidate.departDate}-${candidate.returnDate}-${candidate.provider}`;
+      return candidateKey === comboKey;
+    }) === index;
   });
+
+  await flightsStore.searchAggregatedRealFlights(dedupedCombinations);
 };
 
 onMounted(async () => {
@@ -102,6 +121,20 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   flightsStore.stopSimulation();
 });
+
+const closeBookingApiModal = () => {
+  flightsStore.setShouldPromptBookingApi(false);
+};
+
+const saveBookingApiAndRetry = async () => {
+  if (!bookingUserApiForm.value.apiKey.trim()) {
+    return;
+  }
+
+  saveBookingUserApiConfig(bookingUserApiForm.value);
+  flightsStore.setShouldPromptBookingApi(false);
+  await submitSearch();
+};
 </script>
 
 <template>
@@ -112,7 +145,7 @@ onBeforeUnmount(() => {
           <p class="text-sm uppercase tracking-[0.3em] text-skyline/80">AirFare Radar</p>
           <h2 class="mt-3 text-3xl font-semibold text-white sm:text-4xl">中文地名搜索、可折叠筛选、票据地图联动。</h2>
           <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            首页现在默认使用学习数据源。筛选器不用时可以收起成一条摘要带，地图页会直接同步当前票池中的全部路线。
+            首页现在默认使用 Booking.com API。搜索会真实聚合所有已选出发机场和目的地机场，不再只查第一组组合。
           </p>
         </div>
 
@@ -344,7 +377,8 @@ onBeforeUnmount(() => {
           <p class="text-sm uppercase tracking-[0.3em] text-skyline/80">数据源选择</p>
           <h3 class="mt-3 text-2xl font-semibold text-white">默认已切到学习数据</h3>
           <p class="mt-3 text-sm leading-6 text-slate-300">
-            右侧可以随时切换到 AeroDataBox、Booking.com 或示例数据。学习采集器默认读取本地样例，更适合当前的产品演示。
+            右侧可以随时切换到 Booking.com、AeroDataBox、学习采集器或示例数据。当前默认方法是 Booking.com，
+            并且会把所有已选机场组合一并聚合查询。
           </p>
 
           <div class="mt-5 grid gap-3">
@@ -352,12 +386,12 @@ onBeforeUnmount(() => {
               <input
                 v-model="selectedApiProvider"
                 type="radio"
-                value="learning"
+                value="booking"
                 class="mt-1 border-white/20 bg-slate-900 text-sky-400 focus:ring-skyline"
               />
               <div>
-                <p class="text-sm font-semibold text-white">学习采集器</p>
-                <p class="mt-1 text-xs leading-5 text-slate-400">默认选项，读取本地样例或你自建的学习接口。</p>
+                <p class="text-sm font-semibold text-white">Booking.com API</p>
+                <p class="mt-1 text-xs leading-5 text-slate-400">默认选项，会对所有已选机场组合做聚合搜索。</p>
               </div>
             </label>
 
@@ -378,12 +412,12 @@ onBeforeUnmount(() => {
               <input
                 v-model="selectedApiProvider"
                 type="radio"
-                value="booking"
+                value="mock"
                 class="mt-1 border-white/20 bg-slate-900 text-sky-400 focus:ring-skyline"
               />
               <div>
-                <p class="text-sm font-semibold text-white">Booking.com API</p>
-                <p class="mt-1 text-xs leading-5 text-slate-400">真实 OTA 票价搜索，适合对比价格参考。</p>
+                <p class="text-sm font-semibold text-white">示例数据</p>
+                <p class="mt-1 text-xs leading-5 text-slate-400">用于兜底演示，不消耗接口额度。</p>
               </div>
             </label>
 
@@ -391,12 +425,12 @@ onBeforeUnmount(() => {
               <input
                 v-model="selectedApiProvider"
                 type="radio"
-                value="mock"
+                value="learning"
                 class="mt-1 border-white/20 bg-slate-900 text-sky-400 focus:ring-skyline"
               />
               <div>
-                <p class="text-sm font-semibold text-white">示例数据</p>
-                <p class="mt-1 text-xs leading-5 text-slate-400">用于兜底演示，不消耗接口额度。</p>
+                <p class="text-sm font-semibold text-white">学习采集器</p>
+                <p class="mt-1 text-xs leading-5 text-slate-400">读取本地样例或你自建的学习接口。</p>
               </div>
             </label>
           </div>
@@ -452,6 +486,61 @@ onBeforeUnmount(() => {
         :key="notice.id"
         :message="notice.message"
       />
+    </div>
+
+    <div
+      v-if="shouldPromptBookingApi"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/72 px-4 backdrop-blur-sm"
+      @click.self="closeBookingApiModal"
+    >
+      <div class="w-full max-w-xl rounded-[32px] border border-white/10 bg-slate-950 p-6 shadow-2xl sm:p-8">
+        <p class="text-sm uppercase tracking-[0.3em] text-amber-300">Booking.com API 失败</p>
+        <h3 class="mt-4 text-3xl font-semibold text-white">请输入你自己的 API 配置</h3>
+        <p class="mt-4 text-sm leading-6 text-slate-300">
+          当前 Booking.com 请求失败，页面已经降级到示例数据。你可以在这里输入自己的 RapidAPI Key，
+          保存后系统会立刻重试刚才这次搜索。配置只会保存在当前浏览器本地。
+        </p>
+
+        <div class="mt-6 grid gap-4">
+          <label class="block">
+            <span class="mb-2 block text-sm text-slate-300">X-RapidAPI-Key</span>
+            <input
+              v-model="bookingUserApiForm.apiKey"
+              type="password"
+              placeholder="请输入你自己的 Booking.com RapidAPI Key"
+              class="w-full rounded-2xl border-white/10 bg-slate-900/75 px-4 py-3 text-white placeholder:text-slate-500 focus:border-skyline focus:ring-skyline"
+            />
+          </label>
+
+          <label class="block">
+            <span class="mb-2 block text-sm text-slate-300">X-RapidAPI-Host</span>
+            <input
+              v-model="bookingUserApiForm.apiHost"
+              type="text"
+              placeholder="booking-com15.p.rapidapi.com"
+              class="w-full rounded-2xl border-white/10 bg-slate-900/75 px-4 py-3 text-white placeholder:text-slate-500 focus:border-skyline focus:ring-skyline"
+            />
+          </label>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            class="rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!bookingUserApiForm.apiKey.trim() || isLoading"
+            @click="saveBookingApiAndRetry"
+          >
+            {{ isLoading ? '重试中...' : '保存并重新搜索' }}
+          </button>
+          <button
+            type="button"
+            class="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            @click="closeBookingApiModal"
+          >
+            暂时关闭
+          </button>
+        </div>
+      </div>
     </div>
   </section>
 </template>

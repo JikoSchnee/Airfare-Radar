@@ -4,6 +4,8 @@ import { mockFlights } from '@/data/mockFlights';
 const BOOKING_RAPIDAPI_KEY = '21fe37be52msh3379a23466e5741p13a328jsnf807a63f8169';
 const BOOKING_RAPIDAPI_HOST = 'booking-com15.p.rapidapi.com';
 const BOOKING_API_BASE_URL = 'https://booking-com15.p.rapidapi.com/api/v1';
+const BOOKING_USER_API_KEY_STORAGE = 'airfare-radar:booking-user-api-key';
+const BOOKING_USER_API_HOST_STORAGE = 'airfare-radar:booking-user-api-host';
 
 const AERODATABOX_RAPIDAPI_KEY =
   import.meta.env.VITE_AERODATABOX_RAPIDAPI_KEY || '21fe37be52msh3379a23466e5741p13a328jsnf807a63f8169';
@@ -15,6 +17,19 @@ const LEARNING_FARES_ENDPOINT =
 
 const CACHE_PREFIX = 'airfare-radar:search:';
 const CACHE_TTL = 10 * 60 * 1000;
+
+export const getBookingUserApiConfig = () => ({
+  apiKey: window.localStorage.getItem(BOOKING_USER_API_KEY_STORAGE) || '',
+  apiHost: window.localStorage.getItem(BOOKING_USER_API_HOST_STORAGE) || BOOKING_RAPIDAPI_HOST,
+});
+
+export const saveBookingUserApiConfig = ({ apiKey, apiHost }) => {
+  window.localStorage.setItem(BOOKING_USER_API_KEY_STORAGE, apiKey.trim());
+  window.localStorage.setItem(
+    BOOKING_USER_API_HOST_STORAGE,
+    (apiHost || BOOKING_RAPIDAPI_HOST).trim(),
+  );
+};
 
 const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -285,11 +300,15 @@ const normalizeAeroDataBoxFlights = (payload, params) => {
 };
 
 const fetchBookingFlights = async (params) => {
+  const customConfig = getBookingUserApiConfig();
+  const bookingApiKey = customConfig.apiKey || BOOKING_RAPIDAPI_KEY;
+  const bookingApiHost = customConfig.apiHost || BOOKING_RAPIDAPI_HOST;
+
   const response = await axios.get(`${BOOKING_API_BASE_URL}/flights/searchFlights`, {
     params,
     headers: {
-      'X-RapidAPI-Key': BOOKING_RAPIDAPI_KEY,
-      'X-RapidAPI-Host': BOOKING_RAPIDAPI_HOST,
+      'X-RapidAPI-Key': bookingApiKey,
+      'X-RapidAPI-Host': bookingApiHost,
     },
   });
 
@@ -477,7 +496,11 @@ export const fetchRealFlights = async (params) => {
         source: 'mock',
         provider,
         sourceLabel: '示例数据',
-        message: '当前展示的是示例数据',
+        message:
+          provider === 'booking'
+            ? 'Booking.com 加载失败，当前展示的是示例数据。你可以输入自己的 API Key 继续搜索。'
+            : '当前展示的是示例数据',
+        requireUserApi: provider === 'booking',
       };
     }
 
@@ -487,7 +510,11 @@ export const fetchRealFlights = async (params) => {
         source: 'mock',
         provider,
         sourceLabel: '示例数据',
-        message: `${label} 返回 403，请先确认已在 RapidAPI 中订阅该接口。当前展示的是示例数据`,
+        message:
+          provider === 'booking'
+            ? 'Booking.com 返回 403，请输入你自己的 API Key。当前展示的是示例数据。'
+            : `${label} 返回 403，请先确认已在 RapidAPI 中订阅该接口。当前展示的是示例数据`,
+        requireUserApi: provider === 'booking',
       };
     }
 
@@ -496,7 +523,11 @@ export const fetchRealFlights = async (params) => {
       source: 'mock',
       provider,
       sourceLabel: '示例数据',
-      message: `${label} 请求失败，当前展示的是示例数据`,
+      message:
+        provider === 'booking'
+          ? 'Booking.com 请求失败，当前展示的是示例数据。你可以输入自己的 API Key 后重试。'
+          : `${label} 请求失败，当前展示的是示例数据`,
+      requireUserApi: provider === 'booking',
     };
   }
 };

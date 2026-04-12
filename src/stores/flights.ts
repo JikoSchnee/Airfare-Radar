@@ -33,10 +33,11 @@ export const useFlightsStore = defineStore('flights', () => {
   const maxPrice = ref(2500);
   const directOnly = ref(false);
   const selectedAirline = ref('全部航司');
-  const selectedApiProvider = ref<FlightApiProvider>('learning');
+  const selectedApiProvider = ref<FlightApiProvider>('booking');
   const isLoading = ref(false);
   const dataSourceLabel = ref('示例数据');
   const lastError = ref('');
+  const shouldPromptBookingApi = ref(false);
   const hasSearchedRealFlights = ref(false);
   const searchDraft = ref<SearchDraft>({
     origins: [
@@ -208,6 +209,7 @@ export const useFlightsStore = defineStore('flights', () => {
       flights.value = result.flights;
       hasSearchedRealFlights.value = true;
       dataSourceLabel.value = result.sourceLabel;
+      shouldPromptBookingApi.value = Boolean(result.requireUserApi);
 
       if (result.message) {
         lastError.value = result.message;
@@ -217,6 +219,77 @@ export const useFlightsStore = defineStore('flights', () => {
       flights.value = mockFlights;
       hasSearchedRealFlights.value = true;
       dataSourceLabel.value = '示例数据';
+      shouldPromptBookingApi.value = Boolean(params.provider === 'booking');
+      lastError.value =
+        error instanceof Error ? error.message : '搜索失败，当前展示的是示例数据';
+      pushNotice('system', '当前展示的是示例数据');
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const mergeFlights = (items: FlightTicket[]) => {
+    const flightMap = new Map<string, FlightTicket>();
+
+    for (const flight of items) {
+      const mergeKey = [
+        flight.airline,
+        flight.flightNumber,
+        flight.departure.code,
+        flight.departure.time,
+        flight.destination.code,
+        flight.destination.time,
+      ].join('|');
+
+      const existing = flightMap.get(mergeKey);
+
+      if (!existing || flight.price < existing.price) {
+        flightMap.set(mergeKey, flight);
+      }
+    }
+
+    return [...flightMap.values()].sort((left, right) => left.price - right.price);
+  };
+
+  const searchAggregatedRealFlights = async (paramsList: FetchRealFlightsParams[]) => {
+    if (!paramsList.length) {
+      return;
+    }
+
+    isLoading.value = true;
+    lastError.value = '';
+    shouldPromptBookingApi.value = false;
+
+    try {
+      const settled = await Promise.all(paramsList.map((params) => fetchRealFlights(params)));
+      const allFlights = mergeFlights(settled.flatMap((result) => result.flights));
+      const firstResult = settled[0];
+      const promptUserApi = settled.some((result) => result.requireUserApi);
+      const messages = settled
+        .map((result) => result.message)
+        .filter((message): message is string => Boolean(message));
+
+      flights.value = allFlights.length ? allFlights : mockFlights;
+      hasSearchedRealFlights.value = true;
+      shouldPromptBookingApi.value = promptUserApi;
+
+      if (paramsList.length > 1) {
+        dataSourceLabel.value = `${firstResult.sourceLabel} · 聚合 ${paramsList.length} 组机场`;
+      } else {
+        dataSourceLabel.value = firstResult.sourceLabel;
+      }
+
+      if (messages.length) {
+        lastError.value = messages[0];
+        pushNotice('system', messages[0]);
+      }
+    } catch (error) {
+      const firstProvider = paramsList[0]?.provider;
+
+      flights.value = mockFlights;
+      hasSearchedRealFlights.value = true;
+      dataSourceLabel.value = '示例数据';
+      shouldPromptBookingApi.value = Boolean(firstProvider === 'booking');
       lastError.value =
         error instanceof Error ? error.message : '搜索失败，当前展示的是示例数据';
       pushNotice('system', '当前展示的是示例数据');
@@ -279,6 +352,10 @@ export const useFlightsStore = defineStore('flights', () => {
     simulationStarted.value = false;
   };
 
+  const setShouldPromptBookingApi = (value: boolean) => {
+    shouldPromptBookingApi.value = value;
+  };
+
   return {
     flights,
     activeRoute,
@@ -292,6 +369,7 @@ export const useFlightsStore = defineStore('flights', () => {
     isLoading,
     dataSourceLabel,
     lastError,
+    shouldPromptBookingApi,
     hasSearchedRealFlights,
     searchDraft,
     superDeals,
@@ -306,9 +384,11 @@ export const useFlightsStore = defineStore('flights', () => {
     setDirectOnly,
     setSelectedAirline,
     setSelectedApiProvider,
+    setShouldPromptBookingApi,
     updateSearchDraft,
     toggleSubscription,
     searchRealFlights,
+    searchAggregatedRealFlights,
     startSimulation,
     stopSimulation,
   };

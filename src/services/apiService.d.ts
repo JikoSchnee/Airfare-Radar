@@ -20,8 +20,18 @@ export interface FetchRealFlightsResult {
   provider: FlightApiProvider;
   sourceLabel: string;
   message?: string;
+  requireUserApi?: boolean;
+}
+
+export interface BookingUserApiConfig {
+  apiKey: string;
+  apiHost: string;
 }
 
 export function fetchRealFlights(
   params: FetchRealFlightsParams,
 ): Promise<FetchRealFlightsResult>;
+
+export function getBookingUserApiConfig(): BookingUserApiConfig;
+
+export function saveBookingUserApiConfig(config: BookingUserApiConfig): void;
