@@ -167,9 +167,3 @@ Build:
 npm run build
 ```
 
----
-
-If you are a recruiter or interviewer, I can provide:
-- product roadmap version
-- PRD-style breakdown
-- STAR interview narrative for each major decision
