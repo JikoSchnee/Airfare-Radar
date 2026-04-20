@@ -1,4 +1,4 @@
-# AirFare Radar - PM Product Case README
+# AirFare Radar
 
 
 ## 1. Product Snapshot
